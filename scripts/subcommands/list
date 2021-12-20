@@ -1,0 +1,71 @@
+#!/bin/bash
+
+NETCAT_TIMEOUT_SECONDS=5
+
+SessionPrefix=$(${WORKDIR}/scripts/_get_tmux_prefix)
+
+proxies=$(cat ${WORKDIR}/proxy-list.txt 2> /dev/null)
+servers=$(cat ${WORKDIR}/server-list.txt 2> /dev/null)
+
+if [[ "$proxies" == "" && "$servers" == "" ]]; then
+    echo "Error: Server list is empty"
+    exit 1
+fi
+
+function list_session() {
+    printf ">> $1_$2 ... "
+    ls ${WORKDIR}/servers/$1/$2 1> /dev/null 2> /dev/null
+    if [ $? != 0 ]; then
+        printf "\033[0;31m" # red
+        printf "Not Found"
+        printf "\033[0m"
+    else
+        printf "\033[0;32m" # green
+        printf "Exists"
+        printf "\033[0m"
+    fi
+    
+    printf " ... "
+
+    _=$(tmux has -t "$SessionPrefix$1_$2" 2> /dev/null)
+
+    if [ $? == 0 ]; then
+        printf "\033[0;32m" # green
+        printf "Running"
+        printf "\033[0m"
+    else
+        printf "\033[0;31m" # red
+        printf "Stopped"
+        printf "\033[0m"
+    fi
+
+    printf " ... "
+
+    _port=$(${WORKDIR}/scripts/_get_server_port $1 $2 2> /dev/null)
+
+    if [[ "${_port}" == "" || $? != 0 ]]; then
+        printf "\033[0;31m" # red
+        printf "No _port.txt"
+        printf "\033[0m"
+    else
+        if nc -w $NETCAT_TIMEOUT_SECONDS -G $NETCAT_TIMEOUT_SECONDS -z 127.0.0.1 ${_port} 1> /dev/null 2> /dev/null; then
+            printf "\033[0;32m" # green
+            printf "Responsive"
+            printf "\033[0m"
+        else
+            printf "\033[0;31m" # red
+            printf "Unresponsive"
+            printf "\033[0m"
+        fi
+    fi
+
+    printf "\n"
+}
+
+for _session_name in ${proxies}; do
+    list_session "proxy" $_session_name
+done
+
+for _session_name in ${servers}; do
+    list_session "minecraft" $_session_name
+done

@@ -1,0 +1,7 @@
+#!bin/bash
+
+project="$1"
+version="$2"
+
+latest_build=$(${WORKDIR}/scripts/_fetch_builds $project $version "latest")
+${WORKDIR}/scripts/_fetch_downloads

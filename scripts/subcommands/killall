@@ -1,0 +1,50 @@
+#!/bin/bash
+
+printf "Are you sure you want to kill (SIGHUP) all running servers? [y/N]: "
+read prompt
+
+if [ $prompt != "y" ]; then
+    echo "Aborting..."
+    exit 0
+fi
+
+SessionPrefix=$(${WORKDIR}/scripts/_get_tmux_prefix)
+
+proxies=$(cat ${WORKDIR}/proxy-list.txt 2> /dev/null)
+servers=$(cat ${WORKDIR}/server-list.txt 2> /dev/null)
+
+for _session_name in $proxies; do
+    printf ">> killing tmux session proxy_${_session_name} ... "
+
+    _result=$(tmux kill-session -t ${SessionPrefix}proxy_${_session_name} 2>&1)
+    
+    if [ $? != 0 ]; then
+        printf "\033[0;31m" # red
+        printf "Error: "
+        echo " ${_result}"
+        printf "\033[0m"
+    else
+        printf "\033[0;32m" # green
+        printf "Done"
+        printf "\033[0m"
+        printf "\n"
+    fi
+done
+
+for _session_name in $servers; do
+    printf ">> killing tmux session minecraft_${_session_name} ... "
+
+    _result=$(tmux kill-session -t ${SessionPrefix}minecraft_${_session_name} 2>&1)
+
+    if [ $? != 0 ]; then
+        printf "\033[0;31m" # red
+        printf "Error: "
+        echo " ${_result}"
+        printf "\033[0m"
+    else
+        printf "\033[0;32m" # green
+        printf "Done"
+        printf "\033[0m"
+        printf "\n"
+    fi
+done

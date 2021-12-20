@@ -1,0 +1,3 @@
+#!/bin/bash
+cat ${WORKDIR}/server-list.txt 2> /dev/null
+exit $?

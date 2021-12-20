@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# arguments
+project="$1"
+
+# API endpoint
+URL=https://papermc.io/api/v2/projects/$project
+
+# fetch and parse
+parse=$(curl $URL 1> /dev/null 2> /dev/null | jq ".versions[]")
+# remove double quotes
+echo ${parse//\"/""}

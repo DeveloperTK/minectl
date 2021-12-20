@@ -1,0 +1,33 @@
+#!/bin/bash
+
+SessionPrefix=$(${WORKDIR}/scripts/_get_tmux_prefix)
+
+proxies=$(cat ${WORKDIR}/proxy-list.txt 2> /dev/null)
+servers=$(cat ${WORKDIR}/server-list.txt 2> /dev/null)
+
+function do_start() {
+    printf ">> starting $1 session '$2' ... "
+
+    result=$(tmux new-session -d -s $SessionPrefix$1_$2 "cd ${WORKDIR}/servers/$1/$2 && ./start.sh" 2>&1)
+    
+    if [ $? != 0 ]; then
+        printf "\033[0;31m" # red
+        printf "Error"
+        printf "\033[0m"
+        printf "\n"
+        echo "    ${result}"
+    else
+        printf "\033[0;32m" # green
+        printf "Done"
+        printf "\033[0m"
+        printf "\n"
+    fi
+}
+
+for _session_name in $proxies; do
+    do_start "proxy" $_session_name
+done
+
+for _session_name in $servers; do
+    do_start "minecraft" $_session_name
+done

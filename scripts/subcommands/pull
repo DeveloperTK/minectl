@@ -1,0 +1,35 @@
+#!/bin/bash
+
+if [ "$1" == "" ] || [ "$2" == "" ]; then
+    echo "Usage: minectl pull [] []"
+    exit 1
+fi
+
+project="$1"
+version="$2"
+
+echo "Fetching latest build number for $1 $2"
+echo ${WORKDIR}/scripts/_fetch_builds $project $version "latest"
+latest_build=$(${WORKDIR}/scripts/_fetch_builds $project $version "latest")
+echo "Fetching artifact id for $project_$version #$latest_build"
+download=$(${WORKDIR}/scripts/_fetch_downloads $project $version $latest_build)
+
+if [[ $? != 0 ]]; then
+    echo "Error while downloading"
+    echo "latest_build=$latest_build"
+    echo "download=$download"
+    exit 1
+fi
+
+prev_pwd=$(pwd)
+
+mkdir -p "${WORKDIR}/lib/paper/$version"
+cd "${WORKDIR}/lib/paper/$version"
+
+curl -o server.jar -L -- "https://papermc.io/api/v2/projects/$project/versions/$version/builds/$latest_build/downloads/$download"
+echo $latest_build > build-number.txt
+
+cd $prev_pwd
+
+echo "latest_build=$latest_build"
+echo "download=$download"

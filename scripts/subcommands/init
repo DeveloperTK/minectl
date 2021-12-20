@@ -1,0 +1,25 @@
+#!/bin/bash
+
+echo "creating files and directories..."
+
+mkdir -p ${WORKDIR}/servers
+
+touch ${WORKDIR}/server-list.txt \
+    ${WORKDIR}/proxy-list.txt \
+    ${WORKDIR}/server-versions.txt \
+    ${WORKDIR}/proxy-versions.txt
+
+echo "
+[1/2] Add the following to your ~/.bashrc or ~/.zshrc file:
+
+    export PATH=\$PATH:${WORKDIR}/path
+
+[2/2] How to run at startup:
+    1. Open 'crontab -e'
+    2. Insert:
+
+    @reboot /bin/bash ${WORKDIR}/minectl.sh start
+
+    3. Save and exit
+
+[-/-] minectl is up and running"

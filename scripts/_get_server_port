@@ -1,0 +1,10 @@
+#!/bin/bash
+
+_port=$(cat "${WORKDIR}/servers/$1/$2/_port.txt" 2> /dev/null) 
+
+if [ "${_port}" == "" ]; then
+    exit 1
+else 
+    printf "$_port"
+    exit 0
+fi

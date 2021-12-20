@@ -1,0 +1,16 @@
+#!/bin/bash
+
+beginswith() { case $2 in "$1"*) true;; *) false;; esac; }
+
+input="$1"
+property="$2"
+while IFS= read -r line
+do
+    if beginswith "$property" "$line"; then
+        port=${line/"${property}="/""}
+        printf "$port"
+        exit 0
+    fi
+done < "$input"
+
+exit 1

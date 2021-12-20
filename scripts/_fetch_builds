@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# arguments
+project="$1"
+version="$2"
+
+# API endpoint
+URL=https://papermc.io/api/v2/projects/$project/versions/$version
+
+if [ "$3" == "latest" ]; then
+    # fetch and parse latest
+    parse=$(curl $URL 2> /dev/null | jq ".builds[-1:][]")
+    # remove double quotes
+    echo ${parse//\"/""}
+else
+    # fetch and parse all
+    parse=$(curl $URL 2> /dev/null | jq ".builds[]")
+    # remove double quotes
+    echo ${parse//\"/""}
+fi

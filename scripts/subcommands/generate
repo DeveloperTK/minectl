@@ -1,0 +1,162 @@
+#!/bin/bash
+
+PAPER_FLAGS='
+JAR="server.jar"
+JAVA="java"
+FLAGS="-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1 -Daikars.new.flags=true -Dusing.aikars.flags=https://mcflags.emc.gs"
+
+while [ true ]; do
+    echo "Starting server..."
+    ${JAVA} -Xmx${RAM} -Xms${RAM} ${FLAGS} -jar ${JAR}  --nogui
+    for i in 3 2 1; do
+        printf "Server restarting in %s... (press CTRL-C to exit)\n" "${i}"
+        sleep 1
+    done
+done'
+
+VELOCITY_FLAGS='
+JAR="server.jar"
+JAVA="java"
+FLAGS="-XX:+UseG1GC -XX:G1HeapRegionSize=4M -XX:+UnlockExperimentalVMOptions -XX:+ParallelRefProcEnabled -XX:+AlwaysPreTouch -XX:MaxInlineLevel=15"
+
+while [ true ]; do
+    echo "Starting proxy..."
+    ${JAVA} -Xmx${RAM} -Xms${RAM} ${FLAGS} -jar ${JAR}
+    for i in 3 2 1; do
+        printf "Proxy restarting in %s... (press CTRL-C to exit)\n" "${i}"
+        sleep 1
+    done
+done'
+
+_create_paper() {
+    _type="minecraft"
+
+    printf "Enter server name: "
+    read _name
+
+    if test -d "${WORKDIR}/servers/$_type/$_name"; then
+        echo "Error: Server $_name already exists!"
+        exit 1
+    fi
+
+    printf "Enter max amount of heap memory: "
+    read _ram
+
+    printf "Enter local port: "
+    read _port
+
+    mkdir -p ${WORKDIR}/servers/$_type/$_name
+    
+    printf $_port > ${WORKDIR}/servers/$_type/$_name/_port.txt
+
+    printf "#!/bin/bash \n\n" > ${WORKDIR}/servers/$_type/$_name/start.sh
+    echo 'RAM="${_ram}"' >> ${WORKDIR}/servers/$_type/$_name/start.sh
+
+    echo '
+JAR="server.jar"
+JAVA="java"
+FLAGS="-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1 -Daikars.new.flags=true -Dusing.aikars.flags=https://mcflags.emc.gs"
+
+while [ true ]; do
+    echo "Starting server..."
+    ${JAVA} -Xmx${RAM} -Xms${RAM} ${FLAGS} -jar ${JAR}  --nogui
+    for i in 3 2 1; do
+        printf "Server restarting in %s... (press CTRL-C to exit)\n" "${i}"
+        sleep 1
+    done
+done
+    ' >> ${WORKDIR}/servers/$_type/$_name/start.sh
+
+    echo "eula=true" > eula.txt
+    echo $_name >> ${WORKDIR}/server-list.txt
+    chmod +x ${WORKDIR}/servers/$_type/$_name/start.sh
+}
+
+_create_velocity() {
+    _type="proxy"
+
+    printf "Enter proxy name: "
+    read _name
+
+    if test -d "${WORKDIR}/servers/$_type/$_name"; then
+        echo "Error: Proxy $_name already exists!"
+        exit 1
+    fi
+
+    printf "Enter max amount of heap memory: "
+    read _ram
+
+    printf "Enter local port: "
+    read _port
+
+    mkdir -p ${WORKDIR}/servers/$_type/$_name
+
+    printf $_port > ${WORKDIR}/servers/$_type/$_name/_port.txt
+
+    printf "#!/bin/bash \n\n" > ${WORKDIR}/servers/$_type/$_name/start.sh
+    echo 'RAM="${_ram}"' >> ${WORKDIR}/servers/$_type/$_name/start.sh
+
+    echo '
+JAR="server.jar"
+JAVA="java"
+FLAGS="-XX:+UseG1GC -XX:G1HeapRegionSize=4M -XX:+UnlockExperimentalVMOptions -XX:+ParallelRefProcEnabled -XX:+AlwaysPreTouch -XX:MaxInlineLevel=15"
+
+while [ true ]; do
+    echo "Starting proxy..."
+    ${JAVA} -Xmx${RAM} -Xms${RAM} ${FLAGS} -jar ${JAR}
+    for i in 3 2 1; do
+        printf "Proxy restarting in %s... (press CTRL-C to exit)\n" "${i}"
+        sleep 1
+    done
+done
+    ' >> ${WORKDIR}/servers/$_type/$_name/start.sh
+
+    echo "eula=true" > eula.txt
+    echo $_name >> ${WORKDIR}/proxy-list.txt
+    chmod +x ${WORKDIR}/servers/$_type/$_name/start.sh
+}
+
+#
+# main script part
+#
+
+printf "What kind of server do you want to create? [proxy/minecraft]: "
+read _type
+
+_flags=
+
+if [ "$_type" == "proxy" ]; then
+    _flags=VELOCITY_FLAGS
+elif [ "$_type" == "minecraft" ]; then
+    _flags=PAPER_FLAGS
+else
+    echo "Error: Only supported types are 'proxy' and 'minecraft'"
+    exit 1
+fi
+
+printf "Enter server name: "
+read _name
+
+if test -d "${WORKDIR}/servers/$_type/$_name"; then
+    echo "Error: Server $_name already exists!"
+    exit 1
+fi
+
+printf "Enter max amount of heap memory: "
+read _ram
+
+printf "Enter local port: "
+read _port
+
+mkdir -p ${WORKDIR}/servers/$_type/$_name
+
+printf $_port > ${WORKDIR}/servers/$_type/$_name/_port.txt
+
+printf "#!/bin/bash \n\n" > ${WORKDIR}/servers/$_type/$_name/start.sh
+echo 'RAM="${_ram}"' >> ${WORKDIR}/servers/$_type/$_name/start.sh
+
+echo _flags >> ${WORKDIR}/servers/$_type/$_name/start.sh
+
+echo "eula=true" > eula.txt
+echo $_name >> ${WORKDIR}/server-list.txt
+chmod +x ${WORKDIR}/servers/$_type/$_name/start.sh

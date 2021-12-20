@@ -1,0 +1,9 @@
+bin/
+servers/
+tmp/
+minectl-tools
+server-list.txt
+proxy-list.txt
+server-versions.txt
+proxy-versions.txt
+lib/

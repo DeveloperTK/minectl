@@ -1,0 +1,35 @@
+#!/bin/bash
+
+SessionPrefix=$(${WORKDIR}/scripts/_get_tmux_prefix)
+
+proxies=$(cat ${WORKDIR}/proxy-list.txt 2> /dev/null)
+servers=$(cat ${WORKDIR}/server-list.txt 2> /dev/null)
+
+function do_restart() {
+    printf ">> restarting $1 session '$2' ... "
+
+    # $_command stdout and stderr is captured to _result
+    _command="tmux send-keys -t $SessionPrefix$1_$2 C-c"
+    { _result=$($_command 2>&1 1>&3-) ;} 3>&1
+    
+    if [ $? != 0 ]; then
+        printf "\033[0;31m" # red
+        printf "Error"
+        printf "\033[0m"
+        printf "\n"
+        echo "    ${_result}"
+    else
+        printf "\033[0;32m" # green
+        printf "Done"
+        printf "\033[0m"
+        printf "\n"
+    fi
+}
+
+for _session_name in $proxies; do
+    do_restart "proxy" $_session_name
+done
+
+for _session_name in $servers; do
+    do_restart "minecraft" $_session_name
+done
